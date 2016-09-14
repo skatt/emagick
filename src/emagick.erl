@@ -25,9 +25,9 @@
 -module(emagick).
 -author('Per Andersson').
 
--export([convert/3, convert/4, convert/5]).
+-export([convert/3, convert/4, convert/5, convert/6]).
 -export ([imageinfo/1, imageinfo/2, imageinfo/3]).
--export ([with/3, with/4, with_imageinfo/1, with_imageinfo/2, with_convert/2, with_convert/3]).
+-export ([with/3, with/4, with_imageinfo/1, with_imageinfo/2, with_convert/2, with_convert/3, with_convert/4]).
 
 -define (DEFAULT_WORKDIR, "/tmp/emagick").
 -define (WORKDIR (AppEnv), proplists:get_value(working_directory, AppEnv, ?DEFAULT_WORKDIR)).
@@ -95,23 +95,26 @@ with_imageinfo({InFile, AppEnv}, Opts) ->
          AppEnv :: proplists:proplist(),
          To     :: atom(),
          Result :: list(binary()).
--spec with_convert(Args, To, Opts) -> {Args, Result}
+-spec with_convert(Args, To, Opts, ToOpts) -> {Args, Result}
     when Args   :: {InFile, AppEnv},
          InFile :: string(),
          AppEnv :: proplists:proplist(),
          To     :: atom(),
          Opts   :: proplists:proplist(),
+         ToOpts   :: proplists:proplist(),
          Result :: list(binary()).
 %%
 %% @doc
 %%      Within a session, convert the input file with *Magick.
 %% @end
 %% -----------------------------------------------------------------------------
-with_convert(Args, To) -> with_convert(Args, To, []).
-with_convert({InFile, AppEnv}, To, Opts) ->
+with_convert(Args, To) -> with_convert(Args, To, [], []).
+with_convert({InFile, AppEnv}, To, Opts) -> with_convert({InFile, AppEnv}, To, Opts, []).
+with_convert({InFile, AppEnv}, To, Opts, ToOpts) ->
     {ok, Res} = run_with(convert, [{infile, InFile},
                                    {to, To},
                                    {opts, Opts},
+                                   {toopts, ToOpts},
                                    {app, AppEnv}]),
     {{InFile, AppEnv}, Res}.
 
@@ -133,6 +136,14 @@ with_convert({InFile, AppEnv}, To, Opts) ->
          Opts    :: proplists:proplist(),
          AppEnv  :: proplists:proplist(),
          OutData :: binary().
+-spec convert(InData, From, To, Opts, AppEnv, ToOpts) -> {ok, OutData}
+  when InData  :: binary(),
+  From    :: atom(),
+  To      :: atom(),
+  Opts    :: proplists:proplist(),
+  ToOpts  :: proplists:proplist(),
+  AppEnv  :: proplists:proplist(),
+  OutData :: binary().
 %%
 %% @doc
 %%      Convert indata with *Magick.
@@ -140,8 +151,9 @@ with_convert({InFile, AppEnv}, To, Opts) ->
 %% -----------------------------------------------------------------------------
 convert(InData, From, To) -> convert(InData, From, To, []).
 convert(InData, From, To, Opts) -> convert(InData, From, To, Opts, []).
-convert(InData, From, To, Opts, AppEnv) ->
-    CB = fun (Args) -> with_convert(Args, To, Opts) end,
+convert(InData, From, To, Opts, AppEnv) -> convert(InData, From, To, Opts, AppEnv, []).
+convert(InData, From, To, Opts, AppEnv, ToOpts) ->
+    CB = fun (Args) -> with_convert(Args, To, Opts, ToOpts) end,
     {_, Converted} = with(InData, From, [CB], AppEnv),
     {ok, Converted}.
 
@@ -209,6 +221,7 @@ run_with(convert, Opts) ->
     InFile = proplists:get_value(infile, Opts),
     To = proplists:get_value(to, Opts),
     CmdOpts = proplists:get_value(opts, Opts, ""),
+    ToOpts = proplists:get_value(toopts, Opts, ""),
     AppEnv = proplists:get_value(app, Opts, []),
 
     Filename = proplists:get_value(filename, AppEnv),
@@ -217,7 +230,7 @@ run_with(convert, Opts) ->
     MagickPrefix = ?MAGICK_PFX(AppEnv),
     OutFile = Workdir ++ "/" ++ Filename ++ "_%06d" ++ "." ++ atom_to_list(To),
     PortCommand = string:join([MagickPrefix, "convert",
-                                   format_opts(CmdOpts), InFile, OutFile], " "),
+                                   format_opts(CmdOpts), InFile, format_toopts(ToOpts), OutFile], " "),
 
     %% execute as port
     PortOpts = [stream, use_stdio, exit_status, binary],
@@ -273,6 +286,13 @@ format_opts([Opt|Opts], Res) ->
     ArgStr =
         "-" ++ string:join([to_string(Arg) || Arg <- tuple_to_list(Opt)], " "),
     format_opts(Opts, Res ++ [ArgStr]).
+
+format_toopts(Opts) -> format_toopts(Opts, []).
+format_toopts([], Res) -> string:join(Res, " ");
+format_toopts([Opt|Opts], Res) ->
+  ArgStr =
+    "+" ++ string:join([to_string(Arg) || Arg <- tuple_to_list(Opt)], " "),
+  format_toopts(Opts, Res ++ [ArgStr]).
 
 -spec to_string(term()) -> string().
 to_string(E) when is_atom(E) ->    atom_to_list(E);
