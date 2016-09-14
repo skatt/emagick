@@ -231,7 +231,7 @@ run_with(convert, Opts) ->
     OutFile = Workdir ++ "/" ++ Filename ++ "_%06d" ++ "." ++ atom_to_list(To),
     PortCommand = string:join([MagickPrefix, "convert",
                                    format_opts(CmdOpts), InFile, format_toopts(ToOpts), OutFile], " "),
-
+    error_logger:info_msg("emagick:convert (~s)~n",[PortCommand]),
     %% execute as port
     PortOpts = [stream, use_stdio, exit_status, binary],
     Port = erlang:open_port({spawn, PortCommand}, PortOpts),
