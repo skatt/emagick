@@ -95,6 +95,13 @@ with_imageinfo({InFile, AppEnv}, Opts) ->
          AppEnv :: proplists:proplist(),
          To     :: atom(),
          Result :: list(binary()).
+-spec with_convert(Args, To, Opts) -> {Args, Result}
+  when Args   :: {InFile, AppEnv},
+  InFile :: string(),
+  AppEnv :: proplists:proplist(),
+  To     :: atom(),
+  Opts   :: proplists:proplist(),
+  Result :: list(binary()).
 -spec with_convert(Args, To, Opts, ToOpts) -> {Args, Result}
     when Args   :: {InFile, AppEnv},
          InFile :: string(),
