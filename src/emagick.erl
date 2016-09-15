@@ -203,7 +203,7 @@ run_with(imageinfo, Opts) ->
 
     MagickPrefix = ?MAGICK_PFX(AppEnv),
 
-    PortCommand = string:join([MagickPrefix, "convert", format_opts(CmdOpts), InFile, "info:"], " "),
+    PortCommand = string:join([MagickPrefix, "identify", format_opts(CmdOpts), InFile, "info:"], " "),
     PortOpts = [stream, use_stdio, exit_status, binary],
     Port = erlang:open_port({spawn, PortCommand}, PortOpts),
 
