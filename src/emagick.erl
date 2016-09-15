@@ -84,11 +84,11 @@ with(InData, From, Funs, AppEnv) ->
 %% -----------------------------------------------------------------------------
 with_identify(Args) -> with_identify(Args, []).
 with_identify({InFile, AppEnv}, Opts) ->
+  error_logger:info_msg("emagick:with_identify (~s)~n",[InFile]),
   {ok, Res} = run_with(identify, [
     {infile, InFile},
     {opts, Opts},
     {app, AppEnv}]),
-  error_logger:info_msg("emagick:with_identify ~p~n",[Res]),
   {{InFile, AppEnv}, Res}.
 
 -spec with_convert(Args, To) -> {Args, Result}
