@@ -52,17 +52,17 @@
 %% -----------------------------------------------------------------------------
 with(InData, From, Funs) -> with(InData, From, Funs, []).
 with(InData, From, Funs, AppEnv) ->
-  error_logger:info_msg("emagick:with (0)~n",[]),
-  WorkDir = ?WORKDIR(AppEnv),
   error_logger:info_msg("emagick:with (1)~n",[]),
-  ok = filelib:ensure_dir(WorkDir ++ "/"),
+  WorkDir = ?WORKDIR(AppEnv),
   error_logger:info_msg("emagick:with (2)~n",[]),
-  Filename = uuid:uuid_to_string(uuid:get_v4()),
+  ok = filelib:ensure_dir(WorkDir ++ "/"),
   error_logger:info_msg("emagick:with (3)~n",[]),
+  Filename = uuid:uuid_to_string(uuid:get_v4()),
+  error_logger:info_msg("emagick:with (4)~n",[]),
   InFile = WorkDir ++ "/" ++ Filename ++ "." ++ atom_to_list(From),
   error_logger:info_msg("emagick:with (~s)~n",[InFile]),
   ok = file:write_file(InFile, InData),
-  error_logger:info_msg("emagick:with (4)~n",[]),
+  error_logger:info_msg("emagick:with (5)~n",[]),
   % Res = call_funs(Funs, {InFile, AppEnv}),
   try lists:foldl(fun (Fun, Arg) -> Fun(Arg) end, {InFile, [{filename, Filename}, {from, From} | AppEnv]}, Funs) of
     Res -> Res
@@ -194,6 +194,7 @@ identify(InData) -> identify(InData, xxx, []).
 identify(InData, From) -> identify(InData, From, []).
 identify(InData, From, Opts) -> identify(InData, From, Opts, []).
 identify(InData, From, Opts, AppEnv) ->
+  error_logger:info_msg("emagick:identify (0)~n",[]),
   CB = fun (Args) -> with_identify(Args, Opts) end,
   {_, Info} = with(InData, From, [CB], AppEnv),
   {ok, [Info]}.
@@ -220,7 +221,7 @@ run_with(identify, Opts) ->
   InFile = proplists:get_value(infile, Opts),
   CmdOpts = proplists:get_value(opts, Opts, ""),
   AppEnv = proplists:get_value(app, Opts, []),
-
+  error_logger:info_msg("emagick:with (6)~n",[]),
   MagickPrefix = ?MAGICK_PFX(AppEnv),
 
   PortCommand = string:join([MagickPrefix, "identify", format_opts(CmdOpts), InFile], " "),
