@@ -196,7 +196,7 @@ identify(InData, From, Opts) -> identify(InData, From, Opts, []).
 identify(InData, From, Opts, AppEnv) ->
   CB = fun (Args) -> with_identify(Args, Opts) end,
   {_, Info} = with(InData, From, [CB], AppEnv),
-  {ok, Info}.
+  {ok, [Info]}.
 
 %% =============================================================================
 %%
