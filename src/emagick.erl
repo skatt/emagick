@@ -211,6 +211,7 @@ run_with(imageinfo, Opts) ->
     MagickPrefix = ?MAGICK_PFX(AppEnv),
 
     PortCommand = string:join([MagickPrefix, "identify", format_opts(CmdOpts), InFile], " "),
+    error_logger:info_msg("emagick:imageinfo (~s)~n",[PortCommand]),
     PortOpts = [stream, use_stdio, exit_status, binary],
     Port = erlang:open_port({spawn, PortCommand}, PortOpts),
 
