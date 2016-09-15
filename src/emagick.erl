@@ -35,16 +35,16 @@
 %% -----------------------------------------------------------------------------
 
 -spec with(InData, From, Funs) -> {ok, Result}
-    when InData :: binary(),
-         From   :: atom(),
-         Funs   :: list(function()),
-         Result :: term().
+  when InData :: binary(),
+  From   :: atom(),
+  Funs   :: list(function()),
+  Result :: term().
 -spec with(InData, From, Funs, AppEnv) -> {ok, Result}
-    when InData :: binary(),
-         From   :: atom(),
-         Funs   :: list(function()),
-         AppEnv :: proplists:proplist(),
-         Result :: term().
+  when InData :: binary(),
+  From   :: atom(),
+  Funs   :: list(function()),
+  AppEnv :: proplists:proplist(),
+  Result :: term().
 %%
 %% @doc
 %%      Call functions in a session with *Magick
@@ -52,30 +52,30 @@
 %% -----------------------------------------------------------------------------
 with(InData, From, Funs) -> with(InData, From, Funs, []).
 with(InData, From, Funs, AppEnv) ->
-    WorkDir = ?WORKDIR(AppEnv),
-    ok = filelib:ensure_dir(WorkDir ++ "/"),
-    Filename = uuid:uuid_to_string(uuid:get_v4()),
-    InFile = WorkDir ++ "/" ++ Filename ++ "." ++ atom_to_list(From),
-    ok = file:write_file(InFile, InData),
-    % Res = call_funs(Funs, {InFile, AppEnv}),
-    try lists:foldl(fun (Fun, Arg) -> Fun(Arg) end, {InFile, [{filename, Filename}, {from, From} | AppEnv]}, Funs) of
-        Res -> Res
-    catch Err -> {error, Err}
-    after
-        file:delete(InFile)
-    end.
+  WorkDir = ?WORKDIR(AppEnv),
+  ok = filelib:ensure_dir(WorkDir ++ "/"),
+  Filename = uuid:uuid_to_string(uuid:get_v4()),
+  InFile = WorkDir ++ "/" ++ Filename ++ "." ++ atom_to_list(From),
+  ok = file:write_file(InFile, InData),
+  % Res = call_funs(Funs, {InFile, AppEnv}),
+  try lists:foldl(fun (Fun, Arg) -> Fun(Arg) end, {InFile, [{filename, Filename}, {from, From} | AppEnv]}, Funs) of
+    Res -> Res
+  catch Err -> {error, Err}
+  after
+    file:delete(InFile)
+  end.
 
 -spec with_imageinfo(Args) -> {Args, Info}
-    when Args   :: {InFile, AppEnv},
-         InFile :: string(),
-         AppEnv :: proplists:proplist(),
-         Info   :: proplists:proplist().
+  when Args   :: {InFile, AppEnv},
+  InFile :: string(),
+  AppEnv :: proplists:proplist(),
+  Info   :: proplists:proplist().
 -spec with_imageinfo(Args, Opts) -> {Args, Info}
-    when Args   :: {InFile, AppEnv},
-         InFile :: string(),
-         AppEnv :: proplists:proplist(),
-         Opts   :: proplists:proplist(),
-         Info   :: proplists:proplist().
+  when Args   :: {InFile, AppEnv},
+  InFile :: string(),
+  AppEnv :: proplists:proplist(),
+  Opts   :: proplists:proplist(),
+  Info   :: proplists:proplist().
 %%
 %% @doc
 %%      Within a session, get the input file metadata
@@ -83,18 +83,17 @@ with(InData, From, Funs, AppEnv) ->
 %% -----------------------------------------------------------------------------
 with_imageinfo(Args) -> with_imageinfo(Args, []).
 with_imageinfo({InFile, AppEnv}, Opts) ->
-    {ok, Res} = run_with(imageinfo, [{infile, InFile},
-                                     {from, proplists:get_value(from, AppEnv, xxx)},
-                                     {opts, Opts},
-                                     {app, AppEnv}]),
-    {{InFile, AppEnv}, Res}.
+  {ok, Res} = run_with(imageinfo, [{infile, InFile},
+    {opts, Opts},
+    {app, AppEnv}]),
+  {{InFile, AppEnv}, Res}.
 
 -spec with_convert(Args, To) -> {Args, Result}
-    when Args   :: {InFile, AppEnv},
-         InFile :: string(),
-         AppEnv :: proplists:proplist(),
-         To     :: atom(),
-         Result :: list(binary()).
+  when Args   :: {InFile, AppEnv},
+  InFile :: string(),
+  AppEnv :: proplists:proplist(),
+  To     :: atom(),
+  Result :: list(binary()).
 -spec with_convert(Args, To, Opts) -> {Args, Result}
   when Args   :: {InFile, AppEnv},
   InFile :: string(),
@@ -103,13 +102,13 @@ with_imageinfo({InFile, AppEnv}, Opts) ->
   Opts   :: proplists:proplist(),
   Result :: list(binary()).
 -spec with_convert(Args, To, Opts, ToOpts) -> {Args, Result}
-    when Args   :: {InFile, AppEnv},
-         InFile :: string(),
-         AppEnv :: proplists:proplist(),
-         To     :: atom(),
-         Opts   :: proplists:proplist(),
-         ToOpts   :: proplists:proplist(),
-         Result :: list(binary()).
+  when Args   :: {InFile, AppEnv},
+  InFile :: string(),
+  AppEnv :: proplists:proplist(),
+  To     :: atom(),
+  Opts   :: proplists:proplist(),
+  ToOpts   :: proplists:proplist(),
+  Result :: list(binary()).
 %%
 %% @doc
 %%      Within a session, convert the input file with *Magick.
@@ -118,31 +117,31 @@ with_imageinfo({InFile, AppEnv}, Opts) ->
 with_convert(Args, To) -> with_convert(Args, To, [], []).
 with_convert({InFile, AppEnv}, To, Opts) -> with_convert({InFile, AppEnv}, To, Opts, []).
 with_convert({InFile, AppEnv}, To, Opts, ToOpts) ->
-    {ok, Res} = run_with(convert, [{infile, InFile},
-                                   {to, To},
-                                   {opts, Opts},
-                                   {toopts, ToOpts},
-                                   {app, AppEnv}]),
-    {{InFile, AppEnv}, Res}.
+  {ok, Res} = run_with(convert, [{infile, InFile},
+    {to, To},
+    {opts, Opts},
+    {toopts, ToOpts},
+    {app, AppEnv}]),
+  {{InFile, AppEnv}, Res}.
 
 -spec convert(InData, From, To) -> {ok, OutData}
-    when InData  :: binary(),
-         From    :: atom(), %% pdf | png | jpg | gif | ...
-         To      :: atom(), %% same as To
-         OutData :: binary().
+  when InData  :: binary(),
+  From    :: atom(), %% pdf | png | jpg | gif | ...
+  To      :: atom(), %% same as To
+  OutData :: binary().
 -spec convert(InData, From, To, Opts) -> {ok, OutData}
-    when InData  :: binary(),
-         From    :: atom(),
-         To      :: atom(),
-         Opts    :: proplists:proplist(),
-         OutData :: binary().
+  when InData  :: binary(),
+  From    :: atom(),
+  To      :: atom(),
+  Opts    :: proplists:proplist(),
+  OutData :: binary().
 -spec convert(InData, From, To, Opts, AppEnv) -> {ok, OutData}
-    when InData  :: binary(),
-         From    :: atom(),
-         To      :: atom(),
-         Opts    :: proplists:proplist(),
-         AppEnv  :: proplists:proplist(),
-         OutData :: binary().
+  when InData  :: binary(),
+  From    :: atom(),
+  To      :: atom(),
+  Opts    :: proplists:proplist(),
+  AppEnv  :: proplists:proplist(),
+  OutData :: binary().
 -spec convert(InData, From, To, Opts, AppEnv, ToOpts) -> {ok, OutData}
   when InData  :: binary(),
   From    :: atom(),
@@ -160,9 +159,9 @@ convert(InData, From, To) -> convert(InData, From, To, []).
 convert(InData, From, To, Opts) -> convert(InData, From, To, Opts, []).
 convert(InData, From, To, Opts, AppEnv) -> convert(InData, From, To, Opts, AppEnv, []).
 convert(InData, From, To, Opts, AppEnv, ToOpts) ->
-    CB = fun (Args) -> with_convert(Args, To, Opts, ToOpts) end,
-    {_, Converted} = with(InData, From, [CB], AppEnv),
-    {ok, Converted}.
+  CB = fun (Args) -> with_convert(Args, To, Opts, ToOpts) end,
+  {_, Converted} = with(InData, From, [CB], AppEnv),
+  {ok, Converted}.
 
 %%
 %% @doc
@@ -170,20 +169,26 @@ convert(InData, From, To, Opts, AppEnv, ToOpts) ->
 %% @end
 %% -----------------------------------------------------------------------------
 -spec imageinfo(InData) -> {ok, proplists:proplist()}
-    when InData :: binary().
--spec imageinfo(InData, Opts) -> {ok, proplists:proplist()}
-    when InData :: binary(),
-         Opts   :: proplists:proplist().
--spec imageinfo(InData, Opts, AppEnv) -> {ok, proplists:proplist()}
-    when InData :: binary(),
-         Opts   :: proplists:proplist(),
-         AppEnv :: proplists:proplist().
-imageinfo(InData) -> imageinfo(InData, []).
-imageinfo(InData, Opts) -> imageinfo(InData, Opts, []).
-imageinfo(InData, Opts, AppEnv) ->
-    CB = fun (Args) -> with_imageinfo(Args, Opts) end,
-    {_, Info} = with(InData, xxx, [CB], AppEnv),
-    {ok, Info}.
+  when InData :: binary().
+-spec imageinfo(InData, From) -> {ok, proplists:proplist()}
+  when InData :: binary(),
+  From :: atom().
+-spec imageinfo(InData, From, Opts) -> {ok, proplists:proplist()}
+  when InData :: binary(),
+  From :: atom(),
+  Opts   :: proplists:proplist().
+-spec imageinfo(InData, From, Opts, AppEnv) -> {ok, proplists:proplist()}
+  when InData :: binary(),
+  From :: atom(),
+  Opts   :: proplists:proplist(),
+  AppEnv :: proplists:proplist().
+imageinfo(InData) -> imageinfo(InData, xxx, []).
+imageinfo(InData, From) -> imageinfo(InData, From, []).
+imageinfo(InData, From, Opts) -> imageinfo(InData, From, Opts, []).
+imageinfo(InData, From, Opts, AppEnv) ->
+  CB = fun (Args) -> with_imageinfo(Args, Opts) end,
+  {_, Info} = with(InData, From, [CB], AppEnv),
+  {ok, Info}.
 
 %% =============================================================================
 %%
@@ -202,87 +207,87 @@ imageinfo(InData, Opts, AppEnv) ->
 %          Opts    :: proplists:proplist(),
 %          Result  :: {ok, list(binary())} | {ok, proplists:proplist()}.
 -spec run_with(imageinfo, proplists:proplist()) -> {ok, proplists:proplist()};
-              (convert, proplists:proplist()) -> {ok, list(binary())}.
+    (convert, proplists:proplist()) -> {ok, list(binary())}.
 run_with(imageinfo, Opts) ->
-    InFile = proplists:get_value(infile, Opts),
-    CmdOpts = proplists:get_value(opts, Opts, ""),
-    AppEnv = proplists:get_value(app, Opts, []),
+  InFile = proplists:get_value(infile, Opts),
+  CmdOpts = proplists:get_value(opts, Opts, ""),
+  AppEnv = proplists:get_value(app, Opts, []),
 
-    MagickPrefix = ?MAGICK_PFX(AppEnv),
+  MagickPrefix = ?MAGICK_PFX(AppEnv),
 
-    PortCommand = string:join([MagickPrefix, "identify", format_opts(CmdOpts), InFile], " "),
-    error_logger:info_msg("emagick:imageinfo (~s)~n",[PortCommand]),
-    PortOpts = [stream, use_stdio, exit_status, binary],
-    Port = erlang:open_port({spawn, PortCommand}, PortOpts),
+  PortCommand = string:join([MagickPrefix, "identify", format_opts(CmdOpts), InFile], " "),
+  error_logger:info_msg("emagick:imageinfo (~s)~n",[PortCommand]),
+  PortOpts = [stream, use_stdio, exit_status, binary],
+  Port = erlang:open_port({spawn, PortCommand}, PortOpts),
 
-    {ok, Data, 0} = receive_until_exit(Port, []),
-    case erlang:port_info(Port) of
-        undefined -> ok;
-        _         -> true = erlang:port_close(Port)
-    end,
+  {ok, Data, 0} = receive_until_exit(Port, []),
+  case erlang:port_info(Port) of
+    undefined -> ok;
+    _         -> true = erlang:port_close(Port)
+  end,
 
-    [_, Fmt, Dims | _] = binary:split(Data, <<" ">>, [trim, global]),
-    [W,H] = lists:map(fun(X) -> list_to_integer(binary_to_list(X)) end, binary:split(Dims, <<"x">>)),
-    {ok, [{format, Fmt},
-          {dimensions, {W, H}}]};
+  [_, Fmt, Dims | _] = binary:split(Data, <<" ">>, [trim, global]),
+  [W,H] = lists:map(fun(X) -> list_to_integer(binary_to_list(X)) end, binary:split(Dims, <<"x">>)),
+  {ok, [{format, Fmt},
+    {dimensions, {W, H}}]};
 run_with(convert, Opts) ->
-    InFile = proplists:get_value(infile, Opts),
-    To = proplists:get_value(to, Opts),
-    CmdOpts = proplists:get_value(opts, Opts, ""),
-    ToOpts = proplists:get_value(toopts, Opts, ""),
-    AppEnv = proplists:get_value(app, Opts, []),
+  InFile = proplists:get_value(infile, Opts),
+  To = proplists:get_value(to, Opts),
+  CmdOpts = proplists:get_value(opts, Opts, ""),
+  ToOpts = proplists:get_value(toopts, Opts, ""),
+  AppEnv = proplists:get_value(app, Opts, []),
 
-    Filename = proplists:get_value(filename, AppEnv),
-    Workdir = ?WORKDIR(AppEnv),
+  Filename = proplists:get_value(filename, AppEnv),
+  Workdir = ?WORKDIR(AppEnv),
 
-    MagickPrefix = ?MAGICK_PFX(AppEnv),
-    OutFile = Workdir ++ "/" ++ Filename ++ "_%06d" ++ "." ++ atom_to_list(To),
-    PortCommand = string:join([MagickPrefix, "convert",
-                                   format_opts(CmdOpts), InFile, format_toopts(ToOpts), OutFile], " "),
-    error_logger:info_msg("emagick:convert (~s)~n",[PortCommand]),
-    %% execute as port
-    PortOpts = [stream, use_stdio, exit_status, binary],
-    Port = erlang:open_port({spawn, PortCommand}, PortOpts),
+  MagickPrefix = ?MAGICK_PFX(AppEnv),
+  OutFile = Workdir ++ "/" ++ Filename ++ "_%06d" ++ "." ++ atom_to_list(To),
+  PortCommand = string:join([MagickPrefix, "convert",
+    format_opts(CmdOpts), InFile, format_toopts(ToOpts), OutFile], " "),
+  error_logger:info_msg("emagick:convert (~s)~n",[PortCommand]),
+  %% execute as port
+  PortOpts = [stream, use_stdio, exit_status, binary],
+  Port = erlang:open_port({spawn, PortCommand}, PortOpts),
 
-    %% crash upon non-zero exit status
-    {ok, _Data, 0} = receive_until_exit(Port, []),
-    case erlang:port_info(Port) of
-        undefined -> ok;
-        _ ->         true = erlang:port_close(Port)
-    end,
+  %% crash upon non-zero exit status
+  {ok, _Data, 0} = receive_until_exit(Port, []),
+  case erlang:port_info(Port) of
+    undefined -> ok;
+    _ ->         true = erlang:port_close(Port)
+  end,
 
-    %% return converted file(s)
-    {ok, _} = read_converted_files(Workdir, Filename, To, InFile).
+  %% return converted file(s)
+  {ok, _} = read_converted_files(Workdir, Filename, To, InFile).
 
 %% -----------------------------------------------------------------------------
 -spec read_converted_files(Workdir, Filename, Suffix, Except) -> {ok, Result}
-    when Workdir  :: string(),
-         Filename :: string(),
-         Suffix :: atom(),
-         Except :: string(),
-         Result   :: list(binary()).
+  when Workdir  :: string(),
+  Filename :: string(),
+  Suffix :: atom(),
+  Except :: string(),
+  Result   :: list(binary()).
 %% @doc
 %%      Read converted files, delete them, and return file data.
 %% @end
 %% -----------------------------------------------------------------------------
 read_converted_files(Workdir, Filename, Suffix, Except) ->
-    Files0 = filelib:wildcard(Workdir ++ "/" ++ Filename ++ "*." ++
-                                 atom_to_list(Suffix)),
-    Files = Files0 -- [Except],
-    do_read_converted_files(lists:sort(Files), []).
+  Files0 = filelib:wildcard(Workdir ++ "/" ++ Filename ++ "*." ++
+    atom_to_list(Suffix)),
+  Files = Files0 -- [Except],
+  do_read_converted_files(lists:sort(Files), []).
 
 do_read_converted_files([], Acc) ->
-    {ok, lists:reverse(Acc)};
+  {ok, lists:reverse(Acc)};
 do_read_converted_files([File|Files], Acc) ->
-    {ok, FileBin} = file:read_file(File),
-    file:delete(File),
-    do_read_converted_files(Files, [FileBin|Acc]).
+  {ok, FileBin} = file:read_file(File),
+  file:delete(File),
+  do_read_converted_files(Files, [FileBin|Acc]).
 
 
 %% -----------------------------------------------------------------------------
 -spec format_opts(Opts) -> Result
-    when Opts   :: proplists:proplist(),
-         Result :: string().
+  when Opts   :: proplists:proplist(),
+  Result :: string().
 %%
 %% @doc
 %%      Format option proplist as string.
@@ -291,9 +296,9 @@ do_read_converted_files([File|Files], Acc) ->
 format_opts(Opts) -> format_opts(Opts, []).
 format_opts([], Res) -> string:join(Res, " ");
 format_opts([Opt|Opts], Res) ->
-    ArgStr =
-        "-" ++ string:join([to_string(Arg) || Arg <- tuple_to_list(Opt)], " "),
-    format_opts(Opts, Res ++ [ArgStr]).
+  ArgStr =
+    "-" ++ string:join([to_string(Arg) || Arg <- tuple_to_list(Opt)], " "),
+  format_opts(Opts, Res ++ [ArgStr]).
 
 format_toopts(Opts) -> format_toopts(Opts, []).
 format_toopts([], Res) -> string:join(Res, " ");
@@ -311,20 +316,20 @@ to_string(E) when is_list(E) ->    E.
 
 %% -----------------------------------------------------------------------------
 -spec receive_until_exit(Port, ReverseBuffer) -> {ok, Data, Status}
-    when Port          :: port(),
-         ReverseBuffer :: list(iolist()),
-         Data          :: binary(),
-         Status        :: non_neg_integer().
+  when Port          :: port(),
+  ReverseBuffer :: list(iolist()),
+  Data          :: binary(),
+  Status        :: non_neg_integer().
 %%
 %% @doc
 %%      Receives until the given port exits.
 %% @end
 %% -----------------------------------------------------------------------------
 receive_until_exit(Port, ReverseBuffer) ->
-    receive
-        {Port, {exit_status, Status}} ->
-            Data = iolist_to_binary(lists:reverse(ReverseBuffer)),
-            {ok, Data, Status};
-        {Port, {data, Data}} ->
-            receive_until_exit(Port, [Data | ReverseBuffer])
-    end.
+  receive
+    {Port, {exit_status, Status}} ->
+      Data = iolist_to_binary(lists:reverse(ReverseBuffer)),
+      {ok, Data, Status};
+    {Port, {data, Data}} ->
+      receive_until_exit(Port, [Data | ReverseBuffer])
+  end.
