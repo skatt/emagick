@@ -221,7 +221,7 @@ run_with(identify, Opts) ->
   InFile = proplists:get_value(infile, Opts),
   CmdOpts = proplists:get_value(opts, Opts, ""),
   AppEnv = proplists:get_value(app, Opts, []),
-  error_logger:info_msg("emagick:with (6)~n",[]),
+  error_logger:info_msg("emagick:run_with (6)~n",[]),
   MagickPrefix = ?MAGICK_PFX(AppEnv),
 
   PortCommand = string:join([MagickPrefix, "identify", format_opts(CmdOpts), InFile], " "),
@@ -230,13 +230,16 @@ run_with(identify, Opts) ->
   Port = erlang:open_port({spawn, PortCommand}, PortOpts),
 
   {ok, Data, 0} = receive_until_exit(Port, []),
+  error_logger:info_msg("emagick:run_with (7)~n",[]),
   case erlang:port_info(Port) of
     undefined -> ok;
     _         -> true = erlang:port_close(Port)
   end,
 
   [_, Fmt, Dims | _] = binary:split(Data, <<" ">>, [trim, global]),
+  error_logger:info_msg("emagick:run_with (8) ~p ~p ~n",[Fmt, Dims]),
   [W,H] = lists:map(fun(X) -> list_to_integer(binary_to_list(X)) end, binary:split(Dims, <<"x">>)),
+  error_logger:info_msg("emagick:run_with (9) ~p ~p ~n",[W,H]),
   {ok, [{format, Fmt},
     {dimensions, {W, H}}]};
 run_with(convert, Opts) ->
