@@ -26,8 +26,8 @@
 -author('Per Andersson').
 
 -export([convert/3, convert/4, convert/5, convert/6]).
--export ([imageinfo/1, imageinfo/2, imageinfo/3]).
--export ([with/3, with/4, with_imageinfo/1, with_imageinfo/2, with_convert/2, with_convert/3, with_convert/4]).
+-export ([identify/1, identify/2, identify/3]).
+-export ([with/3, with/4, with_identify/1, with_identify/2, with_convert/2, with_convert/3, with_convert/4]).
 
 -define (DEFAULT_WORKDIR, "/tmp/emagick").
 -define (WORKDIR (AppEnv), proplists:get_value(working_directory, AppEnv, ?DEFAULT_WORKDIR)).
@@ -56,6 +56,7 @@ with(InData, From, Funs, AppEnv) ->
   ok = filelib:ensure_dir(WorkDir ++ "/"),
   Filename = uuid:uuid_to_string(uuid:get_v4()),
   InFile = WorkDir ++ "/" ++ Filename ++ "." ++ atom_to_list(From),
+  error_logger:info_msg("emagick:with (~s)~n",[InFile]),
   ok = file:write_file(InFile, InData),
   % Res = call_funs(Funs, {InFile, AppEnv}),
   try lists:foldl(fun (Fun, Arg) -> Fun(Arg) end, {InFile, [{filename, Filename}, {from, From} | AppEnv]}, Funs) of
@@ -65,12 +66,12 @@ with(InData, From, Funs, AppEnv) ->
     file:delete(InFile)
   end.
 
--spec with_imageinfo(Args) -> {Args, Info}
+-spec with_identify(Args) -> {Args, Info}
   when Args   :: {InFile, AppEnv},
   InFile :: string(),
   AppEnv :: proplists:proplist(),
   Info   :: proplists:proplist().
--spec with_imageinfo(Args, Opts) -> {Args, Info}
+-spec with_identify(Args, Opts) -> {Args, Info}
   when Args   :: {InFile, AppEnv},
   InFile :: string(),
   AppEnv :: proplists:proplist(),
@@ -81,9 +82,9 @@ with(InData, From, Funs, AppEnv) ->
 %%      Within a session, get the input file metadata
 %% @end
 %% -----------------------------------------------------------------------------
-with_imageinfo(Args) -> with_imageinfo(Args, []).
-with_imageinfo({InFile, AppEnv}, Opts) ->
-  {ok, Res} = run_with(imageinfo, [{infile, InFile},
+with_identify(Args) -> with_identify(Args, []).
+with_identify({InFile, AppEnv}, Opts) ->
+  {ok, Res} = run_with(identify, [{infile, InFile},
     {opts, Opts},
     {app, AppEnv}]),
   {{InFile, AppEnv}, Res}.
@@ -168,25 +169,25 @@ convert(InData, From, To, Opts, AppEnv, ToOpts) ->
 %%      Get indata info with *Magick.
 %% @end
 %% -----------------------------------------------------------------------------
--spec imageinfo(InData) -> {ok, proplists:proplist()}
+-spec identify(InData) -> {ok, proplists:proplist()}
   when InData :: binary().
--spec imageinfo(InData, From) -> {ok, proplists:proplist()}
+-spec identify(InData, From) -> {ok, proplists:proplist()}
   when InData :: binary(),
   From :: atom().
--spec imageinfo(InData, From, Opts) -> {ok, proplists:proplist()}
+-spec identify(InData, From, Opts) -> {ok, proplists:proplist()}
   when InData :: binary(),
   From :: atom(),
   Opts   :: proplists:proplist().
--spec imageinfo(InData, From, Opts, AppEnv) -> {ok, proplists:proplist()}
+-spec identify(InData, From, Opts, AppEnv) -> {ok, proplists:proplist()}
   when InData :: binary(),
   From :: atom(),
   Opts   :: proplists:proplist(),
   AppEnv :: proplists:proplist().
-imageinfo(InData) -> imageinfo(InData, xxx, []).
-imageinfo(InData, From) -> imageinfo(InData, From, []).
-imageinfo(InData, From, Opts) -> imageinfo(InData, From, Opts, []).
-imageinfo(InData, From, Opts, AppEnv) ->
-  CB = fun (Args) -> with_imageinfo(Args, Opts) end,
+identify(InData) -> identify(InData, xxx, []).
+identify(InData, From) -> identify(InData, From, []).
+identify(InData, From, Opts) -> identify(InData, From, Opts, []).
+identify(InData, From, Opts, AppEnv) ->
+  CB = fun (Args) -> with_identify(Args, Opts) end,
   {_, Info} = with(InData, From, [CB], AppEnv),
   {ok, Info}.
 
@@ -206,9 +207,9 @@ imageinfo(InData, From, Opts, AppEnv) ->
 %     when Command :: atom(),
 %          Opts    :: proplists:proplist(),
 %          Result  :: {ok, list(binary())} | {ok, proplists:proplist()}.
--spec run_with(imageinfo, proplists:proplist()) -> {ok, proplists:proplist()};
+-spec run_with(identify, proplists:proplist()) -> {ok, proplists:proplist()};
     (convert, proplists:proplist()) -> {ok, list(binary())}.
-run_with(imageinfo, Opts) ->
+run_with(identify, Opts) ->
   InFile = proplists:get_value(infile, Opts),
   CmdOpts = proplists:get_value(opts, Opts, ""),
   AppEnv = proplists:get_value(app, Opts, []),
@@ -216,7 +217,7 @@ run_with(imageinfo, Opts) ->
   MagickPrefix = ?MAGICK_PFX(AppEnv),
 
   PortCommand = string:join([MagickPrefix, "identify", format_opts(CmdOpts), InFile], " "),
-  error_logger:info_msg("emagick:imageinfo (~s)~n",[PortCommand]),
+  error_logger:info_msg("emagick:identify (~s)~n",[PortCommand]),
   PortOpts = [stream, use_stdio, exit_status, binary],
   Port = erlang:open_port({spawn, PortCommand}, PortOpts),
 
