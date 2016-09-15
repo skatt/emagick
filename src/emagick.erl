@@ -52,12 +52,17 @@
 %% -----------------------------------------------------------------------------
 with(InData, From, Funs) -> with(InData, From, Funs, []).
 with(InData, From, Funs, AppEnv) ->
+  error_logger:info_msg("emagick:with (0)~n",[]),
   WorkDir = ?WORKDIR(AppEnv),
+  error_logger:info_msg("emagick:with (1)~n",[]),
   ok = filelib:ensure_dir(WorkDir ++ "/"),
+  error_logger:info_msg("emagick:with (2)~n",[]),
   Filename = uuid:uuid_to_string(uuid:get_v4()),
+  error_logger:info_msg("emagick:with (3)~n",[]),
   InFile = WorkDir ++ "/" ++ Filename ++ "." ++ atom_to_list(From),
   error_logger:info_msg("emagick:with (~s)~n",[InFile]),
   ok = file:write_file(InFile, InData),
+  error_logger:info_msg("emagick:with (4)~n",[]),
   % Res = call_funs(Funs, {InFile, AppEnv}),
   try lists:foldl(fun (Fun, Arg) -> Fun(Arg) end, {InFile, [{filename, Filename}, {from, From} | AppEnv]}, Funs) of
     Res -> Res
