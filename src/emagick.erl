@@ -26,7 +26,7 @@
 -author('Per Andersson').
 
 -export([convert/3, convert/4, convert/5, convert/6]).
--export ([identify/1, identify/2, identify/3]).
+-export ([identify/1, identify/2, identify/3, identify/4]).
 -export ([with/3, with/4, with_identify/1, with_identify/2, with_convert/2, with_convert/3, with_convert/4]).
 
 -define (DEFAULT_WORKDIR, "/tmp/emagick").
@@ -52,17 +52,11 @@
 %% -----------------------------------------------------------------------------
 with(InData, From, Funs) -> with(InData, From, Funs, []).
 with(InData, From, Funs, AppEnv) ->
-  error_logger:info_msg("emagick:with (1)~n",[]),
   WorkDir = ?WORKDIR(AppEnv),
-  error_logger:info_msg("emagick:with (2)~n",[]),
   ok = filelib:ensure_dir(WorkDir ++ "/"),
-  error_logger:info_msg("emagick:with (3)~n",[]),
   Filename = uuid:uuid_to_string(uuid:get_v4()),
-  error_logger:info_msg("emagick:with (4)~n",[]),
   InFile = WorkDir ++ "/" ++ Filename ++ "." ++ atom_to_list(From),
-  error_logger:info_msg("emagick:with (~s)~n",[InFile]),
   ok = file:write_file(InFile, InData),
-  error_logger:info_msg("emagick:with (5)~n",[]),
   % Res = call_funs(Funs, {InFile, AppEnv}),
   try lists:foldl(fun (Fun, Arg) -> Fun(Arg) end, {InFile, [{filename, Filename}, {from, From} | AppEnv]}, Funs) of
     Res -> Res
@@ -89,7 +83,6 @@ with(InData, From, Funs, AppEnv) ->
 %% -----------------------------------------------------------------------------
 with_identify(Args) -> with_identify(Args, []).
 with_identify({InFile, AppEnv}, Opts) ->
-  error_logger:info_msg("emagick:with_identify (~s)~n",[InFile]),
   {ok, Res} = run_with(identify, [
     {infile, InFile},
     {opts, Opts},
@@ -194,7 +187,6 @@ identify(InData) -> identify(InData, xxx, []).
 identify(InData, From) -> identify(InData, From, []).
 identify(InData, From, Opts) -> identify(InData, From, Opts, []).
 identify(InData, From, Opts, AppEnv) ->
-  error_logger:info_msg("emagick:identify (0)~n",[]),
   CB = fun (Args) -> with_identify(Args, Opts) end,
   {_, Info} = with(InData, From, [CB], AppEnv),
   {ok, [Info]}.
@@ -221,7 +213,6 @@ run_with(identify, Opts) ->
   InFile = proplists:get_value(infile, Opts),
   CmdOpts = proplists:get_value(opts, Opts, ""),
   AppEnv = proplists:get_value(app, Opts, []),
-  error_logger:info_msg("emagick:with (6)~n",[]),
   MagickPrefix = ?MAGICK_PFX(AppEnv),
 
   PortCommand = string:join([MagickPrefix, "identify", format_opts(CmdOpts), InFile], " "),
