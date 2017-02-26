@@ -33,8 +33,8 @@
 -export ([with_mogrify/1,with_mogrify/2]).
 
 -define (DEFAULT_WORKDIR, "/tmp/emagick").
--define (WORKDIR (AppEnv), proplists:get_value(working_directory, AppEnv, ?DEFAULT_WORKDIR)).
--define (MAGICK_PFX (AppEnv), proplists:get_value(magick_prefix, AppEnv, "")).
+-define (WORKDIR (AppEnv), application:get_env(working_directory, AppEnv, ?DEFAULT_WORKDIR)).
+-define (MAGICK_PFX (AppEnv), application:get_env(magick_prefix, AppEnv, "")).
 %% -----------------------------------------------------------------------------
 
 -spec with(InData, From, Funs) -> {ok, Result}
