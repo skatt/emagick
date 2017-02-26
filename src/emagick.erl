@@ -310,6 +310,34 @@ run_with(identify, Opts) ->
   [W,H] = lists:map(fun(X) -> list_to_integer(lists:takewhile(fun(C) -> C =/= $+ end,binary_to_list(X))) end, binary:split(Dims, <<"x">>)),
   {ok, [{format, Fmt},
     {dimensions, {W, H}}]};
+run_with(mogrify, Opts) ->
+  InFile = proplists:get_value(infile, Opts),
+  %To = proplists:get_value(to, Opts),
+  CmdOpts = proplists:get_value(opts, Opts, ""),
+  %ToOpts = proplists:get_value(toopts, Opts, ""),
+  AppEnv = proplists:get_value(app, Opts, []),
+
+  Filename = proplists:get_value(filename, AppEnv),
+  Workdir = ?WORKDIR(AppEnv),
+
+  MagickPrefix = ?MAGICK_PFX(AppEnv),
+  %OutFile = Workdir ++ "/" ++ Filename ++ "_%06d" ++ "." ++ atom_to_list(To),
+  PortCommand = string:join([MagickPrefix, "mogrify",
+    format_opts(CmdOpts), InFile], " "),
+  error_logger:info_msg("emagick:~p (~s)~n",[mogrify,PortCommand]),
+  %% execute as port
+  PortOpts = [stream, use_stdio, exit_status, binary],
+  Port = erlang:open_port({spawn, PortCommand}, PortOpts),
+
+  %% crash upon non-zero exit status
+  {ok, _Data, 0} = receive_until_exit(Port, []),
+  case erlang:port_info(Port) of
+    undefined -> ok;
+    _ ->         true = erlang:port_close(Port)
+  end,
+
+  %% return converted file(s)
+  {ok, _} = read_converted_files(Workdir, Filename, InFile, InFile);
 run_with(Fun, Opts) ->
   InFile = proplists:get_value(infile, Opts),
   To = proplists:get_value(to, Opts),
