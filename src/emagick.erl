@@ -26,8 +26,11 @@
 -author('Per Andersson').
 
 -export([convert/3, convert/4, convert/5, convert/6]).
+-export([mogrify/3, mogrify/4, mogrify/5, mogrify/6]).
 -export ([identify/1, identify/2, identify/3, identify/4]).
--export ([with/3, with/4, with_identify/1, with_identify/2, with_convert/2, with_convert/3, with_convert/4]).
+-export ([with/3, with/4, with_identify/1, with_identify/2]).
+-export ([with_convert/2, with_convert/3, with_convert/4]).
+-export ([with_mogrify/2, with_mogrify/3, with_mogrify/4]).
 
 -define (DEFAULT_WORKDIR, "/tmp/emagick").
 -define (WORKDIR (AppEnv), proplists:get_value(working_directory, AppEnv, ?DEFAULT_WORKDIR)).
@@ -125,6 +128,42 @@ with_convert({InFile, AppEnv}, To, Opts, ToOpts) ->
     {app, AppEnv}]),
   {{InFile, AppEnv}, Res}.
 
+-spec with_mogrify(Args, To) -> {Args, Result}
+  when Args   :: {InFile, AppEnv},
+  InFile :: string(),
+  AppEnv :: proplists:proplist(),
+  To     :: atom(),
+  Result :: list(binary()).
+-spec with_mogrify(Args, To, Opts) -> {Args, Result}
+  when Args   :: {InFile, AppEnv},
+  InFile :: string(),
+  AppEnv :: proplists:proplist(),
+  To     :: atom(),
+  Opts   :: proplists:proplist(),
+  Result :: list(binary()).
+-spec with_mogrify(Args, To, Opts, ToOpts) -> {Args, Result}
+  when Args   :: {InFile, AppEnv},
+  InFile :: string(),
+  AppEnv :: proplists:proplist(),
+  To     :: atom(),
+  Opts   :: proplists:proplist(),
+  ToOpts   :: proplists:proplist(),
+  Result :: list(binary()).
+%%
+%% @doc
+%%      Within a session, mogrify the input file with *Magick.
+%% @end
+%% -----------------------------------------------------------------------------
+with_mogrify(Args, To) -> with_mogrify(Args, To, [], []).
+with_mogrify({InFile, AppEnv}, To, Opts) -> with_mogrify({InFile, AppEnv}, To, Opts, []).
+with_mogrify({InFile, AppEnv}, To, Opts, ToOpts) ->
+  {ok, Res} = run_with(mogrify, [{infile, InFile},
+    {to, To},
+    {opts, Opts},
+    {toopts, ToOpts},
+    {app, AppEnv}]),
+  {{InFile, AppEnv}, Res}.
+
 -spec convert(InData, From, To) -> {ok, OutData}
   when InData  :: binary(),
   From    :: atom(), %% pdf | png | jpg | gif | ...
@@ -163,6 +202,46 @@ convert(InData, From, To, Opts, AppEnv, ToOpts) ->
   CB = fun (Args) -> with_convert(Args, To, Opts, ToOpts) end,
   {_, Converted} = with(InData, From, [CB], AppEnv),
   {ok, Converted}.
+
+-spec mogrify(InData, From, To) -> {ok, OutData}
+  when InData  :: binary(),
+  From    :: atom(), %% pdf | png | jpg | gif | ...
+  To      :: atom(), %% same as To
+  OutData :: binary().
+-spec mogrify(InData, From, To, Opts) -> {ok, OutData}
+  when InData  :: binary(),
+  From    :: atom(),
+  To      :: atom(),
+  Opts    :: proplists:proplist(),
+  OutData :: binary().
+-spec mogrify(InData, From, To, Opts, AppEnv) -> {ok, OutData}
+  when InData  :: binary(),
+  From    :: atom(),
+  To      :: atom(),
+  Opts    :: proplists:proplist(),
+  AppEnv  :: proplists:proplist(),
+  OutData :: binary().
+-spec mogrify(InData, From, To, Opts, AppEnv, ToOpts) -> {ok, OutData}
+  when InData  :: binary(),
+  From    :: atom(),
+  To      :: atom(),
+  Opts    :: proplists:proplist(),
+  ToOpts  :: proplists:proplist(),
+  AppEnv  :: proplists:proplist(),
+  OutData :: binary().
+%%
+%% @doc
+%%      Mogrify indata with *Magick.
+%% @end
+%% -----------------------------------------------------------------------------
+mogrify(InData, From, To) -> mogrify(InData, From, To, []).
+mogrify(InData, From, To, Opts) -> mogrify(InData, From, To, Opts, []).
+mogrify(InData, From, To, Opts, AppEnv) -> mogrify(InData, From, To, Opts, AppEnv, []).
+mogrify(InData, From, To, Opts, AppEnv, ToOpts) ->
+  CB = fun (Args) -> with_mogrify(Args, To, Opts, ToOpts) end,
+  {_, Converted} = with(InData, From, [CB], AppEnv),
+  {ok, Converted}.
+
 
 %%
 %% @doc
@@ -208,7 +287,8 @@ identify(InData, From, Opts, AppEnv) ->
 %          Opts    :: proplists:proplist(),
 %          Result  :: {ok, list(binary())} | {ok, proplists:proplist()}.
 -spec run_with(identify, proplists:proplist()) -> {ok, proplists:proplist()};
-    (convert, proplists:proplist()) -> {ok, list(binary())}.
+    (convert, proplists:proplist()) -> {ok, list(binary())};
+    (mogrify, proplists:proplist()) -> {ok, list(binary())}.
 run_with(identify, Opts) ->
   InFile = proplists:get_value(infile, Opts),
   CmdOpts = proplists:get_value(opts, Opts, ""),
@@ -230,7 +310,7 @@ run_with(identify, Opts) ->
   [W,H] = lists:map(fun(X) -> list_to_integer(lists:takewhile(fun(C) -> C =/= $+ end,binary_to_list(X))) end, binary:split(Dims, <<"x">>)),
   {ok, [{format, Fmt},
     {dimensions, {W, H}}]};
-run_with(convert, Opts) ->
+run_with(Fun, Opts) ->
   InFile = proplists:get_value(infile, Opts),
   To = proplists:get_value(to, Opts),
   CmdOpts = proplists:get_value(opts, Opts, ""),
@@ -242,9 +322,9 @@ run_with(convert, Opts) ->
 
   MagickPrefix = ?MAGICK_PFX(AppEnv),
   OutFile = Workdir ++ "/" ++ Filename ++ "_%06d" ++ "." ++ atom_to_list(To),
-  PortCommand = string:join([MagickPrefix, "convert",
+  PortCommand = string:join([MagickPrefix, to_list(Fun),
     format_opts(CmdOpts), InFile, format_toopts(ToOpts), OutFile], " "),
-  error_logger:info_msg("emagick:convert (~s)~n",[PortCommand]),
+  error_logger:info_msg("emagick:~p (~s)~n",[Fun,PortCommand]),
   %% execute as port
   PortOpts = [stream, use_stdio, exit_status, binary],
   Port = erlang:open_port({spawn, PortCommand}, PortOpts),
@@ -333,3 +413,35 @@ receive_until_exit(Port, ReverseBuffer) ->
     {Port, {data, Data}} ->
       receive_until_exit(Port, [Data | ReverseBuffer])
   end.
+
+-define(IS_STRING(Term), (is_list(Term) andalso Term /= [] andalso is_integer(hd(Term)))).
+
+to_list(L) when ?IS_STRING(L) -> L;
+to_list(L) when is_list(L) -> SubLists = [inner_to_list(X) || X <- L], lists:flatten(SubLists);
+to_list(A) -> inner_to_list(A).
+inner_to_list(A) when is_atom(A) -> atom_to_list(A);
+inner_to_list(B) when is_binary(B) -> binary_to_list(B);
+inner_to_list(I) when is_integer(I) -> integer_to_list(I);
+inner_to_list(L) when is_tuple(L) -> lists:flatten(io_lib:format("~p", [L]));
+inner_to_list(L) when is_list(L) -> L;
+inner_to_list(F) when is_float(F) -> float_to_list(F,[{decimals,9},compact]).
+
+to_atom(A) when is_atom(A) -> A;
+to_atom(B) when is_binary(B) -> to_atom(binary_to_list(B));
+to_atom(I) when is_integer(I) -> to_atom(integer_to_list(I));
+to_atom(F) when is_float(F) -> to_atom(float_to_list(F,[{decimals,9},compact]));
+to_atom(L) when is_list(L) -> list_to_atom(binary_to_list(list_to_binary(L))).
+
+to_binary(A) when is_atom(A) -> atom_to_binary(A,latin1);
+to_binary(B) when is_binary(B) -> B;
+to_binary(T) when is_tuple(T) -> term_to_binary(T);
+to_binary(I) when is_integer(I) -> to_binary(integer_to_list(I));
+to_binary(F) when is_float(F) -> float_to_binary(F,[{decimals,9},compact]);
+to_binary(L) when is_list(L) ->  iolist_to_binary(L).
+
+to_integer(A) when is_atom(A) -> to_integer(atom_to_list(A));
+to_integer(B) when is_binary(B) -> to_integer(binary_to_list(B));
+to_integer(I) when is_integer(I) -> I;
+to_integer([]) -> 0;
+to_integer(L) when is_list(L) -> list_to_integer(L);
+to_integer(F) when is_float(F) -> round(F).
