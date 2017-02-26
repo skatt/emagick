@@ -192,12 +192,10 @@ convert(InData, From, To, Opts, AppEnv, ToOpts) ->
 
 -spec mogrify(InData, Opts) -> {ok, OutData}
   when InData  :: binary(),
-  From    :: atom(),
   Opts    :: proplists:proplist(),
   OutData :: binary().
 -spec mogrify(InData, Opts, AppEnv) -> {ok, OutData}
   when InData  :: binary(),
-  From    :: atom(),
   Opts    :: proplists:proplist(),
   AppEnv  :: proplists:proplist(),
   OutData :: binary().
