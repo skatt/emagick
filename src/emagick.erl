@@ -206,7 +206,7 @@ convert(InData, From, To, Opts, AppEnv, ToOpts) ->
 %% -----------------------------------------------------------------------------
 mogrify(InData, Opts) -> mogrify(InData, Opts, []).
 mogrify(InData, Opts, AppEnv) ->
-  [_|Ext] = filename:extension(InData),
+  [_|Ext] = to_list(filename:extension(InData)),
   CB = fun (Args) -> with_mogrify(Args, Opts) end,
   {_, Converted} = with(InData, to_atom(Ext), [CB], AppEnv),
   {ok, Converted}.
@@ -305,9 +305,9 @@ run_with(mogrify, Opts) ->
     _ ->         true = erlang:port_close(Port)
   end,
 
-  [_|Ext] = filename:extension(InFile),
+  [_|Ext] = to_list(filename:extension(InFile)),
   %% return converted file(s)
-  {ok, _} = read_converted_files(Workdir, Filename, atom_to_list(Ext), InFile);
+  {ok, _} = read_converted_files(Workdir, Filename, to_atom(Ext), InFile);
 run_with(Fun, Opts) ->
   InFile = proplists:get_value(infile, Opts),
   To = proplists:get_value(to, Opts),
