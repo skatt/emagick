@@ -311,8 +311,9 @@ run_with(mogrify, Opts) ->
     _ ->         true = erlang:port_close(Port)
   end,
 
+  [_|Ext] = filename:extension(InFile),
   %% return converted file(s)
-  {ok, _} = read_converted_files(Workdir, Filename, InFile, InFile);
+  {ok, _} = read_converted_files(Workdir, Filename, atom_to_list(Ext), InFile);
 run_with(Fun, Opts) ->
   InFile = proplists:get_value(infile, Opts),
   To = proplists:get_value(to, Opts),
