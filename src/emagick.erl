@@ -26,7 +26,7 @@
 -author('Per Andersson').
 
 -export([convert/3, convert/4, convert/5, convert/6]).
--export([mogrify/2, mogrify/3, mogrify/4]).
+-export([mogrify/2, mogrify/3]).
 -export ([identify/1, identify/2, identify/3, identify/4]).
 -export ([with/3, with/4, with_identify/1, with_identify/2]).
 -export ([with_convert/2, with_convert/3, with_convert/4]).
@@ -190,16 +190,12 @@ convert(InData, From, To, Opts, AppEnv, ToOpts) ->
   {_, Converted} = with(InData, From, [CB], AppEnv),
   {ok, Converted}.
 
--spec mogrify(InData, From) -> {ok, OutData}
-  when InData  :: binary(),
-  From    :: atom(), %% pdf | png | jpg | gif | ...
-  OutData :: binary().
--spec mogrify(InData, From, Opts) -> {ok, OutData}
+-spec mogrify(InData, Opts) -> {ok, OutData}
   when InData  :: binary(),
   From    :: atom(),
   Opts    :: proplists:proplist(),
   OutData :: binary().
--spec mogrify(InData, From, Opts, AppEnv) -> {ok, OutData}
+-spec mogrify(InData, Opts, AppEnv) -> {ok, OutData}
   when InData  :: binary(),
   From    :: atom(),
   Opts    :: proplists:proplist(),
@@ -210,11 +206,11 @@ convert(InData, From, To, Opts, AppEnv, ToOpts) ->
 %%      Mogrify indata with *Magick.
 %% @end
 %% -----------------------------------------------------------------------------
-mogrify(InData, From) -> mogrify(InData, From, []).
-mogrify(InData, From, Opts) -> mogrify(InData, From, Opts, []).
-mogrify(InData, From, Opts, AppEnv) ->
+mogrify(InData, Opts) -> mogrify(InData, Opts, []).
+mogrify(InData, Opts, AppEnv) ->
+  [_|Ext] = filename:extension(InData),
   CB = fun (Args) -> with_mogrify(Args, Opts) end,
-  {_, Converted} = with(InData, From, [CB], AppEnv),
+  {_, Converted} = with(InData, to_atom(Ext), [CB], AppEnv),
   {ok, Converted}.
 
 
