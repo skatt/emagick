@@ -34,7 +34,7 @@
 
 -define (DEFAULT_WORKDIR, "/tmp/emagick").
 -define (WORKDIR (AppEnv), application:get_env(working_directory, AppEnv, ?DEFAULT_WORKDIR)).
--define (MAGICK_PFX (AppEnv), application:get_env(magick_prefix, AppEnv, "")).
+-define (MAGICK_PFX (AppEnv), application:get_env(magick_prefix, AppEnv, "gm")).
 %% -----------------------------------------------------------------------------
 
 -spec with(InData, From, Funs) -> {ok, Result}
@@ -210,7 +210,6 @@ mogrify(InData, Opts, AppEnv) ->
   CB = fun (Args) -> with_mogrify(Args, Opts) end,
   {_, Converted} = with(InData, to_atom(Ext), [CB], AppEnv),
   {ok, Converted}.
-
 
 %%
 %% @doc
