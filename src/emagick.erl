@@ -190,7 +190,7 @@ convert(InData, From, To, Opts, AppEnv, ToOpts) ->
   {_, Converted} = with(InData, From, [CB], AppEnv),
   {ok, Converted}.
 
--spec mogrify(InData, From, To) -> {ok, OutData}
+-spec mogrify(InData, From) -> {ok, OutData}
   when InData  :: binary(),
   From    :: atom(), %% pdf | png | jpg | gif | ...
   OutData :: binary().
